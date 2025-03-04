@@ -260,11 +260,20 @@ EmitIR::operator()(UnaryExpr *obj) // 一元表达式：非!和取负-
     switch (obj->op)
     {
     case UnaryExpr::kNot:
-        return irb.CreateNot(val);
+    {
+        llvm::Value *result = val;
+        if (result->getType()->isIntegerTy(32))
+        { // 这里是为了处理非0为真的情况
+            result = irb.CreateICmpNE(result, irb.getInt32(0), "isNonZero");
+        }
+        return irb.CreateNot(result);
+    }
 
     case UnaryExpr::kNeg:
         return irb.CreateNeg(val);
 
+    case UnaryExpr::kPos: // 正号，注意这里一定要处理
+        return val;
     default:
         ABORT();
     }
